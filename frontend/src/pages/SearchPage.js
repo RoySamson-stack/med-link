@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Navbar, NavbarBrand, NavbarMenuToggle, NavbarMenu, NavbarMenuItem, NavbarContent, NavbarItem, Link, Button, Card, CardHeader, CardBody, CardFooter, Divider } from '@nextui-org/react';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
 function JobSearchPage() {
+  const { authState, logout } = useContext(AuthContext); // Access auth state and logout function from context
   const [query, setQuery] = useState('');
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [category, setCategory] = useState('');
   const [region, setRegion] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -50,24 +50,12 @@ function JobSearchPage() {
     setFilteredJobs(filtered);
   }, [query, category, region, jobs]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUsername = localStorage.getItem('username');
-    if (token) {
-      setIsLoggedIn(true);
-      setUsername(storedUsername || '');
-    }
-  }, []);
-
   const handleSearch = () => {
     setFilteredJobs(jobs.filter(job => job.title.toLowerCase().includes(query.toLowerCase())));
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    setIsLoggedIn(false);
-    setUsername('');
+    logout(); // Logout using the context
     navigate('/login');
   };
 
@@ -94,7 +82,7 @@ function JobSearchPage() {
         </NavbarContent>
 
         <NavbarContent justify="end">
-          {!isLoggedIn ? (
+          {!authState.isAuthenticated ? (
             <>
               <NavbarItem className="hidden lg:flex">
                 <Button className="px-4 py-2 shadow-lg rounded" onClick={() => navigate('/login')}>Login</Button>
@@ -106,7 +94,7 @@ function JobSearchPage() {
           ) : (
             <>
               <NavbarItem>
-                <div className="px-4 py-2">Hello, {username}</div>
+                <div className="px-4 py-2">Hello, {authState.name}</div>
               </NavbarItem>
               <NavbarItem>
                 <Button className="px-4 py-2 bg-red-500 rounded" onClick={handleLogout}>Logout</Button>
